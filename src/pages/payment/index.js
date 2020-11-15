@@ -1,22 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Select } from 'antd';
 import { useHistory } from 'react-router-dom';
+import { useCartContext } from '../../context/productContext';
+import { API } from '../../services/API';
 import InputMask from 'react-input-mask';
-import {useCartContext} from '../../context/productContext';
 import Button from '../../components/buttonComponent/index';
 import axios from 'axios';
 import "./styles.css";
 
 function PaymentPage() {
-  const {products} = useCartContext();
+  const { products, cartReset } = useCartContext();
   const [payment, setPayment] = useState({ nome: "", email: "", cpf: "", cep: "", endereco: "", bairro: "", numero: 0, cidade: "", estado: "", complemento: "", pagamento: "boleto", cartao: "", ccv: "", vencimento: "", parcelas: '1' });
   const history = useHistory();
 
-  useEffect(()=>{
-    if(!products || products.length <= 0){
+  useEffect(() => {
+    if (!products || products.length <= 0) {
       history.push('/cart');
     }
-  },[]);
+  }, [history, products]);
 
   function handleChangeText(e) {
     setPayment({ ...payment, [e.target.name]: e.target.value });
@@ -26,7 +27,7 @@ function PaymentPage() {
   }
 
   function handleOnChangeCartao(e, name) {
-    setPayment({ ...payment, parcelas: "1", cartao: "", vencimento: "", ccv : "", [name] : e});
+    setPayment({ ...payment, parcelas: "1", cartao: "", vencimento: "", ccv: "", [name]: e });
   }
 
   async function handleBlurFindCEP(e) {
@@ -43,10 +44,17 @@ function PaymentPage() {
     return total;
   }
 
-  function onSubmit(e){
+  function onSubmit(e) {
     e.preventDefault();
-    const data = {...payment, ...products};
-    console.log(data);
+    const location = { name: payment.endereco, CEP: payment.cep.replace(/\D/g, ''), Street: payment.endereco, District: payment.bairro, City: payment.cidade, State: payment.estado, Number: payment.numero, Complement: payment.complemento };
+    const tmpPayment = { payment: payment.pagamento, card: payment.cartao, ccv: payment.ccv, dueDate: payment.vencimento, plots: payment.parcelas };
+    const data = { OrderCode: "", name: payment.nome, email: payment.email, cpf: payment.cpf.replace(/\D/g, ''), Products: products, Location: location, Payment: tmpPayment };
+
+    API.post('/api/Orders', { ...data })
+      .then(resp => {
+        window.location = `/order-success?pedido=${resp.data}`;
+      })
+      .catch(err => { history.push(`/order-error`); })
   }
 
   return (
@@ -65,7 +73,7 @@ function PaymentPage() {
         </div>
         <div className="form-group">
           <label>CPF *:</label>
-          <InputMask type="text" name="cpf" mask="999.999.999-99" className="antd-input input" value={payment.cpf} placeholder="Digite seu CPF" onChange={e => handleChangeText(e)} required />
+          <InputMask type="text" name="cpf" mask="999.999.999-99" maskChar=" " className="antd-input input" minLength="14" value={payment.cpf} placeholder="Digite seu CPF" onChange={e => handleChangeText(e)} required />
         </div>
       </div>
 
@@ -145,7 +153,6 @@ function PaymentPage() {
 
         {payment.pagamento === "boleto" ? (<div className="boleto">
           <p> 1x de {totalValue().toLocaleString('pt-br', { style: 'currency', currency: 'BRL' })}</p>
-          <p> Clique aqui para gerar o boleto</p>
         </div>) : (<div className="credito">
           <div className="form-group-3">
             <label>Número Cartão de crédito *:</label>
@@ -162,22 +169,22 @@ function PaymentPage() {
           <div className="form-group-3">
             <label>Número de parcelas</label>
             <Select value={payment.parcelas} onChange={e => handleOnChange(e, 'parcelas')} name="parcelas" id="parcelas" className="antd-input input" required>
-            <Select.Option value="1">1</Select.Option>
-            <Select.Option value="2">2</Select.Option>
-            <Select.Option value="3">3</Select.Option>
-            <Select.Option value="4">4</Select.Option>
-            <Select.Option value="5">5</Select.Option>
-            <Select.Option value="6">6</Select.Option>
-            <Select.Option value="7">7</Select.Option>
-            <Select.Option value="8">8</Select.Option>
-            <Select.Option value="9">9</Select.Option>
-            <Select.Option value="10">10</Select.Option>
-            <Select.Option value="11">11</Select.Option>
-            <Select.Option value="12">12</Select.Option>
-          </Select>
+              <Select.Option value="1">1</Select.Option>
+              <Select.Option value="2">2</Select.Option>
+              <Select.Option value="3">3</Select.Option>
+              <Select.Option value="4">4</Select.Option>
+              <Select.Option value="5">5</Select.Option>
+              <Select.Option value="6">6</Select.Option>
+              <Select.Option value="7">7</Select.Option>
+              <Select.Option value="8">8</Select.Option>
+              <Select.Option value="9">9</Select.Option>
+              <Select.Option value="10">10</Select.Option>
+              <Select.Option value="11">11</Select.Option>
+              <Select.Option value="12">12</Select.Option>
+            </Select>
           </div>
           <div className="form-group">
-          <p> { payment.parcelas } parcelas de { (totalValue() / eval(payment.parcelas)).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' })}</p>
+            <p> {payment.parcelas} parcelas de {(totalValue() / payment.parcelas).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' })}</p>
           </div>
         </div>)}
       </div>

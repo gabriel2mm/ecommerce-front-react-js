@@ -1,11 +1,8 @@
-import React, { useState, useContext, createContext, useEffect } from 'react';
+import React, { useState, useContext, createContext } from 'react';
 
-const CartContext = createContext({products : [], addProduct: null, removeProduct: null});
+const CartContext = createContext({products : [], addProduct: null, removeProduct: null, cartReset: null});
 export const CartContextProvider = ({children}) => {
   const [products, setProducts] = useState([])
-
-  useEffect(() => {
-  }, []);
 
   function addProduct(product) {
     if(products.filter(p => p.id === product.id).length > 0){
@@ -23,6 +20,10 @@ export const CartContextProvider = ({children}) => {
     }
   }
 
+  function cartReset(){
+    setProducts([]);
+  }
+
   function removeProduct(product ){
     if(products.filter(p => p.id === product.id).length > 0){
       if(product.quantidade > 1){
@@ -38,7 +39,7 @@ export const CartContextProvider = ({children}) => {
   }
 
   return (
-    <CartContext.Provider value={{products, addProduct, removeProduct}}>
+    <CartContext.Provider value={{products, addProduct, removeProduct, cartReset}}>
      {children}
     </CartContext.Provider>
   )

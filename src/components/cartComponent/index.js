@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Empty } from 'antd';
 import { PlusOutlined, LineOutlined } from '@ant-design/icons';
 import { useCartContext } from '../../context/productContext';
+import {API} from '../../services/API';
 import "./styles.css";
 
 const CartComponent = () => {
   const { products, addProduct, removeProduct } = useCartContext();
+  const [title , setTitle] = useState("Reservar");
 
   function handleAddProduct(product){
     addProduct(product)
@@ -17,6 +19,27 @@ const CartComponent = () => {
   function currencyString(product){
     const value =product.quantidade * product.productManagement.product.price;
     return value.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+  }
+
+  function handleReservation(p){
+    const quantidade = p.quantidade;
+    const id = p.productManagement.id;
+
+    if(title === "Reservar" || title === "Cancelado"){
+      API.post('/api/Reservations', { id, quantidade})
+      .then(p => setTitle("Reservado"))
+      .catch(err => {
+        console.log(err);
+        setTitle("Não foi possível reservar produto");
+      })
+    }else{
+      API.delete('/api/Reservations',  { data: {id} })
+      .then(p => setTitle("Cancelado"))
+      .catch(err => {
+        console.log(err);
+        setTitle("Não foi possível cancelar reserva do produto");
+      })
+    }
   }
 
   function renderProducts() {
@@ -32,6 +55,7 @@ const CartComponent = () => {
               <button className="remover" onClick={e => handleRemoveProduct(p)}><LineOutlined/></button>
             </td>
             <td className="ant-table-row ant-table-row-level-0 title">{currencyString(p)}</td>
+            <td><a href="#!" style={{color: 'blue'}} onClick={e => handleReservation(p)}>{title}</a></td>
           </tr>
         )
       )
@@ -49,6 +73,7 @@ const CartComponent = () => {
             <th>Produto</th>
             <th>Quantidade</th>
             <th>Subtotal</th>
+            <th>Reservar</th>
           </tr>
         </thead>
 

@@ -27,7 +27,7 @@ const CartPage = () => {
         </div>
         <div className="actions">
           <ButtonComponent value="Voltar" link='/products' className="danger" />
-          <ButtonComponent value="Continuar" link='/payment' className="primary" />
+          {products.length > 0 ? ( <ButtonComponent value="Continuar" link='/payment' className="primary" />) : ( null )}
         </div>
       </div>
     </section>
